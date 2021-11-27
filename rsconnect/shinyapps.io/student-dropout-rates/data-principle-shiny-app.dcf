@@ -1,0 +1,11 @@
+name: data-principle-shiny-app
+title:
+username:
+account: student-dropout-rates
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 5203791
+bundleId: 5292514
+url: https://student-dropout-rates.shinyapps.io/data-principle-shiny-app/
+when: 1637845973.40586
+lastSyncTime: 1637845973.40591
