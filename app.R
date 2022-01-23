@@ -27,11 +27,23 @@ higest_dropout_rate_country <- select(filter_countryList, c("Region", "Countries
 ui <- navbarPage("Student Dropout Rate", theme = shinytheme("flatly"),
              tabPanel("About",
                       h2("Introduction"),
-                      h4("This analysis is to provide an overview on dropout rate of 
-                  students in secondary level education from multiple countries."),
-                      h4("Few things were taken into consideration while carrying out 
-                  this analysis such as development status of a country,  
-                  type of the residence and gender of students."),
+                      
+                      h4("This application provides information of student dropout rate from secondary 
+                      level education in multiple countries based on gender and type of residency. 
+                      Development status of a country is clearly stated."),
+                      
+                      h4("These information could bring values to Ministry of Education of a country on 
+                         planning the redemption scheme to reduce the student dropout rate. At individual level,
+                         parents can further research on countries that have low student dropout rate to know more 
+                         about the countries' education system as well as the teaching materials for their children's 
+                         future."),
+                      
+                      h2("Instruction"),
+                      h4("1. Navigate to 'Map' on the above tab."),
+                      h4("2. Kindly select one or more countries based on your interest."),
+                      h4("3. Navigate your cursor to marker on map."),
+                      h4("4. Press the marker."),
+                      h4("5. A series of information is then presented to you. Enjoy!"),
                       
                       h2("Beneficiary"),
                       h4("Ministry of Education"),
