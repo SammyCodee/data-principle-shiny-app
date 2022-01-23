@@ -5,9 +5,9 @@ account: student-dropout-rates
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 5411599
-bundleId: 5498960
+bundleId: 5499024
 url: https://student-dropout-rates.shinyapps.io/data-principle-shiny-app/
-when: 1642951724.14391
-lastSyncTime: 1642951724.14393
+when: 1642953324.23492
+lastSyncTime: 1642953324.23493
 asMultiple: FALSE
 asStatic: FALSE

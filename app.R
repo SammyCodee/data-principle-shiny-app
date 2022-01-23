@@ -45,9 +45,6 @@ ui <- navbarPage("Student Dropout Rate", theme = shinytheme("flatly"),
                       h4("4. Press the marker."),
                       h4("5. A series of information is then presented to you. Enjoy!"),
                       
-                      h2("Beneficiary"),
-                      h4("Ministry of Education"),
-                      
                       h2("Goals"),
                       h4("To draw critical insights"),
                       h4("To provide a decision support on planning the 
