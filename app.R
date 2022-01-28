@@ -26,6 +26,12 @@ higest_dropout_rate_country <- select(filter_countryList, c("Region", "Countries
 
 ui <- navbarPage("Student Dropout Rate", theme = shinytheme("flatly"),
              tabPanel("About",
+                      
+                      h2("Goals"),
+                      h4("To draw critical insights"),
+                      h4("To provide a decision support on planning the 
+                    redemption scheme the student dropout rate"),
+                      
                       h2("Introduction"),
                       
                       h4("This application provides information of student dropout rate from secondary 
@@ -45,10 +51,6 @@ ui <- navbarPage("Student Dropout Rate", theme = shinytheme("flatly"),
                       h4("4. Press the marker."),
                       h4("5. A series of information is then presented to you. Enjoy!"),
                       
-                      h2("Goals"),
-                      h4("To draw critical insights"),
-                      h4("To provide a decision support on planning the 
-                    redemption scheme the student dropout rate")
              ),
              tabPanel("Map",
                       selectInput(inputId = "countryList",
@@ -88,7 +90,7 @@ ui <- navbarPage("Student Dropout Rate", theme = shinytheme("flatly"),
                          compared to Urban Residence with 0.9903334%."),
                       h4("We conclude the students from Rural Residence are more likely to dropout from school compared to Urban Residences."),
                       
-                      h2("4. The country with highest dropout rate in each region"),
+                      h2("4. The country with highest dropout rate"),
                       
                       plotOutput("country_plot"),
                       
