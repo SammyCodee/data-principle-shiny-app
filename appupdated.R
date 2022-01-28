@@ -1,0 +1,292 @@
+library(shiny)
+library(shinyWidgets)
+library(leaflet)
+library(dplyr)
+library(sf)
+library(shinythemes)
+library(shinydashboard)
+library(tidyr)
+library(ggplot2)
+library(GGally)
+
+data_lower_secondary <- read.csv("Lower_secondary.csv")
+filter_countryList <- data_lower_secondary[1:110, ]
+
+r_colors <- rgb(t(col2rgb(colors()) / 255))
+names(r_colors) <- colors()
+
+default_Latitude <- 33.939110
+default_Longitude <- 67.709953
+default_zoom <- 2
+
+#Get country with highest dropout rate
+highest_dropout_rate_country <- select(filter_countryList, c("Region","Countries.and.Areas","Development","Gender.Female","Gender.Male","Total"))
+
+
+ui <- navbarPage("Student Dropout Rate", theme = shinytheme("flatly"),
+                 tabPanel("About",
+                          h2("Introduction"),
+                          
+                          h4("This application provides information of student dropout rate from secondary 
+                      level education in multiple countries based on gender and type of residency. 
+                      Development status of a country is clearly stated."),
+                          
+                          h4("These information could bring values to Ministry of Education of a country on 
+                         planning the redemption scheme to reduce the student dropout rate. At individual level,
+                         parents can further research on countries that have low student dropout rate to know more 
+                         about the countries' education system as well as the teaching materials for their children's 
+                         future."),
+                          
+                          h2("Instruction"),
+                          h4("1. Navigate to 'Map' on the above tab."),
+                          h4("2. Kindly select one or more countries based on your interest."),
+                          h4("3. Navigate your cursor to marker on map."),
+                          h4("4. Press the marker."),
+                          h4("5. A series of information is then presented to you. Enjoy!"),
+                          
+                          h2("Goals"),
+                          h4("To draw critical insights"),
+                          h4("To provide a decision support on planning the 
+                    redemption scheme the student dropout rate")
+                 ),
+                 tabPanel("Map",
+                          selectInput(inputId = "countryList",
+                                      label = "Select one or multiple country: ",
+                                      multiple = TRUE,
+                                      choices = sort(filter_countryList$Countries.and.Areas),
+                                      selected = "Afghanistan"
+                          ),
+                          
+                          h5("Tips: Press the marker on the map to see the info."),
+                          
+                          leafletOutput(outputId = "leafletMap")
+                 ),
+                 tabPanel("Insights",
+                          
+                          h2("1. The comparison of less developed and more develop country"),
+                          
+                          plotOutput("developed_plot"),
+                          
+                          h4("From the bar chart it shows the least developed country has the highest dropout rate."),
+                          
+                          h2("2. The gender dropout rate in less developed regions"),
+                          
+                          plotOutput("gender_plot"),
+                          
+                          h4("Comparison of location - Boxplot shows that the median of female is greater than male in less develop countries."),
+                          h4("Comparison of dispersion - Overall range of the data set is greater for the female (as shown by the distances between 
+                         the ends of the two whiskers for each boxplot."),
+                          
+                          h2("3. The relationship of student dropout rate and place of residence"),
+                          
+                          plotOutput("residence_plot"),
+                          
+                          h4("The plot above combines correlation coefficients, correlation tests 
+                         (via the asterisks next to the coefficients2) and scatterplots for all possible pairs of variables present in a dataset."),
+                          h4("From the analysis, we can see Rural Residence contributes to higher correlation to Student Dropout Rate
+                         compared to Urban Residence with 0.9903334%."),
+                          h4("We conclude the students from Rural Residence are more likely to dropout from school compared to Urban Residences."),
+                          
+                          h2("4. What is the country in each region that has the highest student dropout rate?"),
+                          
+                          h3("(a) Number of countries in each region"),
+                          
+                          plotOutput("country"),   
+                          
+                          h3("(b) Country with highest student dropout rate by region"),
+                          
+                          plotOutput("country_plot"),
+                          
+                          h4("Niger from Sub-Saharan Africa(SSA) region has the highest percentage of student dropout rate 
+                              at a staggering number of 70% followed by Afghanistan (South Asia (SA)), Guatemala (Latin America
+                              and Caribbean (LAC)), Cambodia (East Asia Pacific (EAP)), Yemen (Middle East/North Africa(MENA)),
+                              and Romania (Europe and Central Asia (ECA))."),
+                          
+                          h3("(c) Country with highest MALE student dropout rate by region"),
+                          
+                          plotOutput("country_plot_2"),
+                          
+                          h4("Niger maintains as the highest country with highest percentage of male student dropout rate by region
+                              at 67%, followed by Honduras (30%), Cambodia (26%), Afghanistan (25%), Iraq (15%), and Romania (10%)."),
+                          
+                          h3("(d) Country with highest FEMALE student dropout rate by region"),
+                          
+                          plotOutput("country_plot_3"),
+                          
+                          h4("For Female students, Niger has the highest percentage of student dropout at 73%, further strengthening
+                              the fact that SSA Region has the highest amount of countries with Dropout students"),
+                 ),
+                 
+                 
+)
+
+server <- function(input, output) {
+  data <- reactive({
+    filter_countryList %>%
+      filter(Countries.and.Areas %in% input$countryList) %>%
+      mutate(INFO = paste0(Countries.and.Areas, " | ", 
+                           Development, " | ", 
+                           "Total: ", Total,"%"," | ",
+                           "Female: ", Gender.Female,"%"," | ", 
+                           "Male: ", Gender.Male, "%", " | ",
+                           "School Age: ", School.Age, " | ",
+                           "Rural Area: ", Rural.Residence,"%", " | ",
+                           "Urban Area: ", Urban.Residence,"%"
+      ))
+  })
+  
+  output$leafletMap <- renderLeaflet({
+    leaflet(data = data()) %>%
+      setView(lat = default_Latitude, lng = default_Longitude, zoom = default_zoom) %>%
+      addTiles() %>%
+      addMarkers(~Longitude, ~Latitude, popup = ~INFO, label = ~INFO) %>%
+      addProviderTiles(providers$Esri.WorldStreetMap)
+  })
+  
+  #Insights Question 1
+  output$developed_plot <- renderPlot({
+    dp <- select(filter_countryList, Countries.and.Areas:Urban.Residence,
+                 -c(Latitude, Longitude, School.Age, Region, UNICEF.Subregion))
+    
+    dp[!complete.cases(dp), ]
+    
+    dp1 <- na.omit(dp)
+    
+    dp2 <- spread(dp1, Development, Total)
+    
+    #replace the NA
+    dp3 <- dp2
+    dp3[is.na(dp3)] = 0
+    dp3 <- rename(dp3, Least.Developed = "Least Developed", Less.Developed = "Less Developed",
+                          More.Developed = "More Developed")
+    
+    #select only "developed" columns
+    dp4 <- select(dp3, Least.Developed: More.Developed)
+    dp4[,1] = as.integer(dp4[,1])
+    dp4[,2] = as.integer(dp4[,2])
+    dp4[,3] = as.integer(dp4[,3])
+    average <- apply(dp4, 2, mean)
+    dp5 <- average
+    dp6 <- as.data.frame(dp5)
+    dp6 <- t(dp6)
+    
+    barplot(dp6, main = "Average Dropout Rate by Development of Country",
+            xlab = "Development Status",
+            ylab = "Dropout Rate in %",
+            col = "#aee05a",
+    )
+  })
+  
+  #Insight Question 2
+  output$gender_plot <- renderPlot(({
+    dp1 <- select(filter_countryList, Countries.and.Areas, Development, X, X.1, Population.data)
+    
+    colnames(dp1)<- c("Country","Development","Pop.female","Pop.male", "Pop.total")
+    
+    # stacked bar chart - Count of Country based on Development Type
+    ggplot(dp1, 
+           aes(x = Development,
+               fill = Pop.total)) + 
+      geom_bar(position = "stack")
+    
+    dp2 <- filter (dp1,Development=="Less Developed")
+    
+    ## Boxplot Compare Gender in Less Develop Countries
+    ###(a) Before normalization
+    boxplot(dp2$Pop.female, dp2$Pop.male,
+            main ="Multiple Boxplots Comparison Gender 
+        in Less Developed Countries",
+            at = c(1,2),
+            names = c("Female", "Male"),
+            las = 1,
+            col = c("orange","red"),
+            border = "brown",
+            horizontal = TRUE,
+            notch = TRUE
+    )
+    
+    ###(b) After Normalization
+    female <- dp2$Pop.female
+    male <- dp2$Pop.male
+    female_norm <- rnorm(200,mean=mean(female, na.rm=TRUE), sd=sd(female, na.rm=TRUE))
+    male_norm <- rnorm(200,mean=mean(male, na.rm=TRUE), sd=sd(male, na.rm=TRUE))
+    boxplot(female, female_norm, male, male_norm,
+            main = "  Multiple Boxplots for Comparison Gender in Less Developed Countries - Before and After Normalization",
+            at = c(1,2,4,5),
+            names = c("Female", "Female_N", "Male", "Male_N"),
+            las = 1,
+            col = c("orange","red"),
+            border = "brown",
+            horizontal = TRUE,
+            notch = TRUE
+    )
+  }))
+  
+  #Insights Question 3
+  output$residence_plot <- renderPlot({
+    dp <- select(filter_countryList, Countries.and.Areas:Urban.Residence, 
+                 -c(Latitude, Longitude, School.Age, Region, UNICEF.Subregion))
+    
+    dp[!complete.cases(dp), ]
+    
+    dp1 <- na.omit(dp)
+    
+    dp2 <- dp1
+    dp2[is.na(dp2)]=0
+    
+    dp3 <- dp2 %>% rename("Number Of Dropouts" = Total, 
+                          "Rural Residence" = Rural.Residence, 
+                          "Urban Residence" = Urban.Residence)
+    
+    dp4 <- select(dp3, "Number Of Dropouts", "Rural Residence": "Urban Residence")
+    dp4[,1] = as.integer(dp4[,1])
+    dp4[,2] = as.integer(dp4[,2])
+    dp4[,3] = as.integer(dp4[,3])
+    
+    Urban.Res.Corr <- cor.test(dp4$"Number Of Dropouts", dp4$"Urban Residence")
+    
+    Rural.Res.Corr <- cor.test(dp4$"Number Of Dropouts", dp4$"Rural Residence")
+    
+    ggpairs(dp4[ , c("Number Of Dropouts", "Urban Residence", "Rural Residence")])
+  })
+  
+  #Insights Question 4
+  
+  output$country <- renderPlot({
+    filter_rate <- highest_dropout_rate_country[order(tolower(highest_dropout_rate_country$Region),-highest_dropout_rate_country$Total),] 
+    g <- ggplot(filter_rate, aes(x = Region, fill=Region)) 
+    g + geom_bar(stat="count") + theme_classic() + scale_y_continuous(breaks = seq(0,100,by = 5)) + labs(title = "Number of country in each Region with the Highest Dropout Rate", y = "Number of countries", x = "Region") 
+  })
+  output$country_plot <- renderPlot({
+    filter_highest_rate <- highest_dropout_rate_country %>%
+      group_by(Region) %>%
+      slice(which.max(Total))
+    
+    g <- ggplot(filter_highest_rate, aes(x = Countries.and.Areas, y=Total, fill=Region)) 
+    g + geom_bar(stat="identity") + theme_classic() + scale_y_continuous(breaks = seq(0,100,by = 5)) + labs(title = "Country in each Region with the Highest Dropout Rate", y = "Percentage of Dropout, %", x = "Countries") + geom_text(aes(label = Total), vjust = 1)
+    
+  })
+  
+  output$country_plot_2 <- renderPlot({
+    filter_highest_rate_male <- highest_dropout_rate_country %>%
+      group_by(Region) %>%
+      slice(which.max(Gender.Male)) 
+    
+    g <- ggplot(filter_highest_rate_male, aes(x = Countries.and.Areas, y=Gender.Male, fill=Region)) 
+    g + geom_bar(stat="identity") + theme_classic() + scale_y_continuous(breaks = seq(0,100,by = 5)) + labs(title = "Country in each Region with the Highest Male Dropout Rate", y = "Percentage of Dropout, %", x = "Countries") + geom_text(aes(label = Gender.Male), vjust = 1)
+    
+  })
+  
+  output$country_plot_3 <- renderPlot({
+    filter_highest_rate_female <- highest_dropout_rate_country %>%
+      group_by(Region) %>%
+      slice(which.max(Gender.Female)) 
+    
+    g <- ggplot(filter_highest_rate_female, aes(x = Countries.and.Areas, y=Gender.Female, fill=Region)) 
+    g + geom_bar(stat="identity") + theme_classic() + scale_y_continuous(breaks = seq(0,100,by = 5)) + labs(title = "Country in each Region with the Highest Female Dropout Rate", y = "Percentage of Dropout, %", x = "Countries") + geom_text(aes(label = Gender.Female), vjust = 1)
+    
+  })
+  
+}
+
+shinyApp(ui = ui, server = server)
